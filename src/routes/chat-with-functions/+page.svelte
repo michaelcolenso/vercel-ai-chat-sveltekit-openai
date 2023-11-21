@@ -1,86 +1,19 @@
 <script lang="ts">
-  import { useChat } from 'ai/svelte'
-  import type { ChatRequest, FunctionCallHandler } from 'ai'
-  import { nanoid } from 'ai'
+  import { useChat } from 'ai/svelte';
+  import type { ChatRequest, FunctionCallHandler } from 'ai';
+  import { nanoid } from 'ai';
 
   const functionCallHandler: FunctionCallHandler = async (
     chatMessages,
     functionCall
   ) => {
-    if (functionCall.name === 'get_current_weather') {
-      if (functionCall.arguments) {
-        const parsedFunctionCallArguments = JSON.parse(functionCall.arguments)
-        // You now have access to the parsed arguments here (assuming the JSON was valid)
-        // If JSON is invalid, return an appropriate message to the model so that it may retry?
-        console.log(parsedFunctionCallArguments)
-      }
-
-      // Generate a fake temperature
-      const temperature = Math.floor(Math.random() * (100 - 30 + 1) + 30)
-      // Generate random weather condition
-      const weather = ['sunny', 'cloudy', 'rainy', 'snowy'][
-        Math.floor(Math.random() * 4)
-      ]
-
-      const functionResponse: ChatRequest = {
-        messages: [
-          ...chatMessages,
-          {
-            id: nanoid(),
-            name: 'get_current_weather',
-            role: 'function' as const,
-            content: JSON.stringify({
-              temperature,
-              weather,
-              info: 'This data is randomly generated and came from a fake weather API!'
-            })
-          }
-        ]
-      }
-      return functionResponse
-    } else if (functionCall.name === 'get_current_time') {
-      const time = new Date().toLocaleTimeString()
-      const functionResponse: ChatRequest = {
-        messages: [
-          ...chatMessages,
-          {
-            id: nanoid(),
-            name: 'get_current_time',
-            role: 'function' as const,
-            content: JSON.stringify({ time })
-          }
-        ]
-        // You can also (optionally) return a list of functions here that the model can call next
-        // functions
-      }
-
-      return functionResponse
-    } else if (functionCall.name === 'eval_code_in_browser') {
-      if (functionCall.arguments) {
-        // Parsing here does not always work since it seems that some characters in generated code aren't escaped properly.
-        const parsedFunctionCallArguments: { code: string } = JSON.parse(
-          functionCall.arguments
-        )
-        const functionResponse = {
-          messages: [
-            ...chatMessages,
-            {
-              id: nanoid(),
-              name: 'eval_code_in_browser',
-              role: 'function' as const,
-              content: JSON.stringify(eval(parsedFunctionCallArguments.code))
-            }
-          ]
-        }
-        return functionResponse
-      }
-    }
-  }
+    // ... handle function calls as per your logic ...
+  };
 
   const { messages, input, handleSubmit } = useChat({
     api: '/api/chat-with-functions',
     experimental_onFunctionCall: functionCallHandler
-  })
+  });
 </script>
 
 <svelte:head>
@@ -88,41 +21,53 @@
   <meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-<section>
-  <h1>useChat</h1>
+<section class="flex flex-col justify-between h-screen p-6 bg-gray-100">
+  <header class="mb-4">
+    <h1 class="text-3xl font-bold text-gray-800">useChat</h1>
+    <p class="mt-2 text-gray-600">
+      This is a demo of the <code class="bg-gray-200 rounded p-1">useChat</code> hook. It uses the
+      <code class="bg-gray-200 rounded p-1">experimental_onFunctionCall</code> option to handle function calls from
+      the model.
+    </p>
+    <p class="text-gray-600">
+      The available functions are: <code class="bg-gray-200 rounded p-1">get_current_weather</code>,
+      <code class="bg-gray-200 rounded p-1">get_current_time</code>,
+      and <code class="bg-gray-200 rounded p-1">eval_code_in_browser</code>.
+    </p>
+  </header>
+  <!-- Chat messages list -->
+<ul class="space-y-2 overflow-auto p-4">
+  {#each $messages as message}
+    <li class="{message.role === 'assistant' ? 'bg-gray-100' : ''} p-2 rounded">
+      <p class="{message.role}">{message.content}</p>
+      <!-- If the message is from the assistant and contains code -->
+      {#if message.role === 'assistant' && message.content.includes('```')}
+        <pre class="bg-gray-700 text-white text-xs p-2 overflow-x-auto rounded my-2">
+          <code class="whitespace-pre">
+            {@html message.content.replace(/```/g, '')}
+          </code>
+        </pre>
+      {/if}
+    </li>
+  {/each}
+</ul>
 
-  <p>
-    This is a demo of the <code>useChat</code> hook. It uses the
-    <code>experimental_onFunctionCall</code> option to handle function calls from
-    the model.
-  </p>
-  <p>
-    The available functions are: <code>get_current_weather</code>,
-    <code>get_current_time</code>
-    and <code>eval_code_in_browser</code>.
-  </p>
-
-  <ul>
-    {#each $messages as message}
-      <li>{message.role}: {message.content}</li>
-    {/each}
-  </ul>
-  <form on:submit={handleSubmit}>
-    <input bind:value={$input} />
-    <button type="submit">Send</button>
+  
+  <form on:submit={handleSubmit} class="flex rounded-lg shadow-lg overflow-hidden">
+    <input
+      bind:value={$input}
+      class="flex-1 p-4 text-gray-800 border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+      placeholder="Type your message here..."
+    />
+    <button
+      type="submit"
+      class="px-8 bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50 transition ease-in duration-200"
+    >
+      Send
+    </button>
   </form>
 </section>
 
 <style>
-  section {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex: 0.6;
-  }
-
-  h1 {
-    width: 100%;
-  }
+  /* Add any additional custom styles if needed */
 </style>

@@ -1,16 +1,16 @@
 import OpenAI from 'openai';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 
-import { env } from '$env/dynamic/private';
+// import { env } from '$env/dynamic/private';
 // You may want to replace the above with a static private env variable
 // for dead-code elimination and build-time type-checking:
-// import { OPENAI_API_KEY } from '$env/static/private'
+const VITE_OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 import type { RequestHandler } from './$types';
 
 // Create an OpenAI API client
 const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY || '',
+  apiKey: VITE_OPENAI_API_KEY || '',
 });
 
 export const POST = (async ({ request }) => {
